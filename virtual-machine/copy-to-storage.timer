@@ -1,0 +1,15 @@
+# This systemd unit is used to control the data bridge service
+[Unit]
+Description=Copy data on a regular schedule
+Documentation=https://github.com/SheffieldMLtracking/data-pipeline/tree/main/virtual-machine
+
+[Timer]
+Unit=copy-to-storage.service
+# Start on boot
+OnBootSec=1min
+# Wait x minutes (monotonic timer) between runs
+OnUnitActiveSec=1min
+
+[Install]
+# Start automatically on system reboot
+WantedBy=timers.target
