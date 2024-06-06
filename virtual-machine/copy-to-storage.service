@@ -1,0 +1,20 @@
+[Unit]
+Description=Transfer data from the virtual machine to research storage
+
+[Service]
+# Path to the source file (replace with your actual path)
+SourceFile=/path/to/source
+
+# Path to the destination file (replace with your actual path)
+DestFile=/mnt/shared/todo
+
+# User account under which the service should run (optional)
+# If omitted, the service runs as the root user (caution advised)
+User=your_username
+
+# Group account under which the service should run (optional)
+Group=your_group
+
+# Command to copy the file with rsync
+ExecStart=/usr/bin/rsync -av $SourceFile $DestFile
+Restart= No
