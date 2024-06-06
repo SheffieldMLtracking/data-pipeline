@@ -1,0 +1,24 @@
+[Unit]
+Description=Sync data with remote host using lftp
+Documentation=https://github.com/SheffieldMLtracking/data-pipeline
+# Requires the network to be available
+Requires=network.target
+# Depends on networking and lftp-sync.timer
+After=network.target lftp-sync.timer
+
+[Service]
+# https://trstringer.com/simple-vs-oneshot-systemd-service/#summary
+Type=simple
+# Path to the lftp script containing the sync logic (replace with your actual script)
+ExecStart=/opt/data-pipeline/lftp-sync.sh
+# Don't restart because this service will be triggered on a schedule
+Restart=no
+
+# User account under which the service should run
+# If omitted, the service runs as the root user
+User=rpi
+# Group account under which the service should run
+Group=rpi
+
+[Install]
+WantedBy=multi-user.target
