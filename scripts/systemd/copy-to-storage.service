@@ -1,0 +1,27 @@
+# Data sync service definition
+# https://systemd.io/
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
+[Unit]
+Description=Transfer data from the virtual machine to research storage
+Documentation=https://github.com/SheffieldMLtracking/data-pipeline
+# Requires the network to be available
+Requires=network.target
+# Depends on networking and the timer unit
+After=network.target
+Wants=copy-to-storage.timer
+
+[Service]
+Type=simple
+# User account under which the service should run (optional)
+# If omitted, the service runs as the root user (caution advised)
+User=service_user
+# Group account under which the service should run (optional)
+Group=service_user
+# Command to copy the file with rsync
+# https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
+ExecStart=/bin/bash /opt/data-pipeline/copy-to-storage.sh
+Restart=no
+
+[Install]
+# Run on boot
+WantedBy=multi-user.target

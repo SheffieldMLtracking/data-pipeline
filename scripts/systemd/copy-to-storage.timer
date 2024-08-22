@@ -1,0 +1,18 @@
+# This systemd timer unit is used to control the data bridge service
+# https://systemd.io/
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
+[Unit]
+Description=Copy data on a regular schedule
+Documentation=https://github.com/SheffieldMLtracking/data-pipeline
+Requires=copy-to-storage.service
+
+[Timer]
+Unit=copy-to-storage.service
+# Start on boot
+OnBootSec=1min
+# Wait x minutes (monotonic timer) between runs
+OnUnitActiveSec=10min
+
+[Install]
+# Start automatically on system reboot
+WantedBy=timers.target

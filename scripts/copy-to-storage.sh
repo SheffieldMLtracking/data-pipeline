@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+# Options
+# The directory on the target remote machine
+source_dir="/home/pi/beephotos"
+# The directory on this machine
+target_dir="/mnt/shared/pml_group/Shared/beephotos"
+max_box_count=99
+
+# Iterate over 99 possible boxes
+for i in $(seq 1 $max_box_count)
+do
+  # Specify the SSH configuration profile
+  target="raspberry$i"
+
+  # Run the data sync
+  /usr/bin/rsync --archive --compress --update --verbose $target:$source_dir $target_dir
+done
