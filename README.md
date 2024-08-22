@@ -12,6 +12,8 @@ The repository contains the following directories:
 
 Please follow the following steps to set up the machine.
 
+## systemd service
+
 First, install dependencies
 
 ```bash
@@ -59,10 +61,27 @@ end
 Generate SSH private and public keys for each target machine.
 
 ```bash
-for i in $(seq 1 10)
+for i in $(seq 1 3)
 do
   host="raspberry$i"
   ssh-keygen -f ~/.ssh/$host -N="" -t ecdsa
+done
+```
+
+To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). On your local machine, copy the public key to the target machine:
+
+```bash
+user="my_username"
+scp ~/.ssh/my_ssh_key.pub $user@iot.bugtrack.org.uk:~/.ssh/authorized_keys
+```
+
+The same must be done for each Raspberry Pi (this step will require username-password authentication)
+
+```bash
+for i in $(seq 1 3)
+do
+  host="raspberry$i"
+  scp ~/.ssh/$host.pub $host:~/.ssh/authorized_keys
 done
 ```
 
@@ -75,15 +94,15 @@ nano ~/.ssh/config
 A Bash script to generate most of the config file:
 
 ```bash
-for i in $(seq 1 10)
+for i in $(seq 1 3)
 do
   host="raspberry$i"
   port=$((5000 + $i))
-  printf "host raspberry$i\n  hostname localhost\n  port $port\n  identityfile ~/.ssh/$host\n  proxyjump awsbox\n\n"
+  printf "host raspberry$i\n  hostname localhost\n  user pi\n  port $port\n  identityfile ~/.ssh/$host\n  proxyjump awsbox\n\n"
 done
 ```
 
-This file should look something like this:
+This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for each target remote host:
 
 ```
 # AWS EC2 instance
@@ -97,6 +116,7 @@ host awsbox
 host raspberry1
   hostname localhost
   port 5001
+  user pi
   identityfile ~/.ssh/raspberry1
   proxyjump awsbox
 ```

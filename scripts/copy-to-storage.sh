@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 
 # Options
-# The directory on the target remote machine
+# The directory on the remote machine
 source_dir="/home/pi/beephotos"
 # The directory on this machine
-target_dir="/mnt/shared/pml_group/Shared/beephotos"
+local_dir="/mnt/shared/pml_group/Shared/beephotos"
 max_box_count=99
 
 # Iterate over 99 possible boxes
@@ -14,5 +14,5 @@ do
   target="raspberry$i"
 
   # Run the data sync
-  /usr/bin/rsync --archive --compress --update --verbose $target:$source_dir $target_dir
+  /usr/bin/rsync --archive --compress --update --verbose $target:$source_dir $local_dir
 done
