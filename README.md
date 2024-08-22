@@ -30,6 +30,13 @@ Install systemd units.
 sudo cp --verbose ./scripts/systemd/* /etc/systemd/
 ```
 
+Install the shell script:
+
+```bash
+sudo mkdir /opt/data-pipeline
+sudo cp ./scripts/copy-to-storage.sh /opt/data-pipeline/copy-to-storage.sh
+```
+
 Activate the service.
 
 ```bash
