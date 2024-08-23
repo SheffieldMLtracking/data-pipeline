@@ -45,7 +45,9 @@ sudo systemctl enable copy-to-storage
 
 ## SSH configuration
 
-This system connects to the target machines using the cloud machine as an intermediate "jump" host.
+This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two) that uses a third machine as an intermediate.
+
+The diagram below shows the different machines involved and how the SSH connections are set up. Each arrow represents an SSH connection, where the double-headed arrows indicate a reverse tunnel, where a local port on one machine is bound to a persistent SSH connection on the other machine. This means we can connect directly from the University of Sheffield (TUOS) campus network onto the Ohio campus network using the AWS virtual machine as an intermediate jump host.
 
 ```mermaid
 ---
@@ -134,6 +136,8 @@ This allows us to access the remote host using this SSH command:
 ssh raspberry1
 ```
 
+This SSH configuration is used by the `rsync` command in this service to establish a connection to the Raspberry Pis and transfer data into the TUOS campus network.
+
 # Usage
 
 The services defined in this repository are `systemd` units that are controlled using [`systemctl`](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html).
@@ -149,3 +153,10 @@ Stop the service.
 ```bash
 sudo systemctl stop copy-to-storage
 ```
+
+To view the `systemd` logs using [journalctl](https://manpages.ubuntu.com/manpages/xenial/en/man1/journalctl.1.html):
+
+```bash
+journalctl -u copy-to-storage.service --lines=100
+```
+
