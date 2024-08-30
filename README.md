@@ -20,6 +20,8 @@ First, install dependencies
 sudo apt install rsync
 ```
 
+Create the necessary service user accounts.
+
 Set up the SSH keys (see the SSH configuration section below).
 
 Clone this repository.
@@ -27,7 +29,8 @@ Clone this repository.
 Install systemd units.
 
 ```bash
-sudo cp --verbose ./scripts/systemd/* /etc/systemd/
+sudo cp --verbose ./scripts/systemd/*.service /etc/systemd/system/
+sudo cp --verbose ./scripts/systemd/*.timer /etc/systemd/system/
 ```
 
 Install the shell script:
@@ -45,7 +48,7 @@ sudo systemctl enable copy-to-storage
 
 ## SSH configuration
 
-This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two) that uses a third machine as an intermediate.
+This SSH configuration is used by the `rsync` command in this service to establish a connection to the Raspberry Pis and transfer data into the TUOS campus network. This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two) that uses a third machine as an intermediate.
 
 The diagram below shows the different machines involved and how the SSH connections are set up. Each arrow represents an SSH connection, where the double-headed arrows indicate a reverse tunnel, where a local port on one machine is bound to a persistent SSH connection on the other machine. This means we can connect directly from the University of Sheffield (TUOS) campus network onto the Ohio campus network using the AWS virtual machine as an intermediate jump host.
 
@@ -67,30 +70,34 @@ raspberry3 <---> awsbox
 end
 ```
 
+To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the TUOS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
+
+## Jump host
+
+For the data transfer service machine (`ohiobeeproject`) to connect to the jump host, we need an SSH key. Create a key for the jump host and copy the public key to the target machine.
+
+```bash
+user="data-pipeline-svc"
+ssh-keygen -f ~/.ssh/bugtrack -N "" -t ecdsa
+scp ~/.ssh/bugtrack.pub $user@iot.bugtrack.org.uk:~/.ssh/authorized_keys
+```
+
+## Raspberry Pis
+
+Specify the identifiers of the target machines, either a numerical range or specific numbers.
+
+```bash
+raspberry_ids="$(seq 1 50)"
+raspberry_ids="31 34 35"
+```
+
 Generate SSH private and public keys for each target machine.
 
 ```bash
-for i in $(seq 1 3)
+for i in $raspberry_ids
 do
   host="raspberry$i"
-  ssh-keygen -f ~/.ssh/$host -N="" -t ecdsa
-done
-```
-
-To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). On your local machine, copy the public key to the target machine:
-
-```bash
-user="my_username"
-scp ~/.ssh/my_ssh_key.pub $user@iot.bugtrack.org.uk:~/.ssh/authorized_keys
-```
-
-The same must be done for each Raspberry Pi (this step will require username-password authentication)
-
-```bash
-for i in $(seq 1 3)
-do
-  host="raspberry$i"
-  scp ~/.ssh/$host.pub $host:~/.ssh/authorized_keys
+  ssh-keygen -f ~/.ssh/$host -N "" -t ecdsa
 done
 ```
 
@@ -103,7 +110,7 @@ nano ~/.ssh/config
 A Bash script to generate most of the config file:
 
 ```bash
-for i in $(seq 1 3)
+for i in $raspberry_ids
 do
   host="raspberry$i"
   port=$((5000 + $i))
@@ -118,8 +125,8 @@ This file should look something like this, with an [entry](https://www.ssh.com/a
 host awsbox
   hostname iot.bugtrack.org.uk
   port 22
-  identityfile ~/.ssh/id_rsa
-  user johndoe
+  identityfile ~/.ssh/bugtrack
+  user data-pipeline-svc
 
 # Raspberry Pi
 host raspberry1
@@ -130,13 +137,21 @@ host raspberry1
   proxyjump awsbox
 ```
 
+Install the public keys onto each Raspberry Pi (this step will require username-password authentication) to enable passwordless key-based authentication.
+
+```bash
+for i in $raspberry_ids
+do
+  host="raspberry$i"
+  scp ~/.ssh/$host.pub $host:~/.ssh/authorized_keys
+done
+```
+
 This allows us to access the remote host using this SSH command:
 
 ```bash
 ssh raspberry1
 ```
-
-This SSH configuration is used by the `rsync` command in this service to establish a connection to the Raspberry Pis and transfer data into the TUOS campus network.
 
 # Usage
 
