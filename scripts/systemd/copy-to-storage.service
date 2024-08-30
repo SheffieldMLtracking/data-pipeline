@@ -14,9 +14,9 @@ Wants=copy-to-storage.timer
 Type=simple
 # User account under which the service should run (optional)
 # If omitted, the service runs as the root user (caution advised)
-User=service_user
+User=ohiobeeprojectsvc
 # Group account under which the service should run (optional)
-Group=service_user
+Group=ohiobeeprojectsvc
 # Command to copy the file with rsync
 # https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
 ExecStart=/bin/bash /opt/data-pipeline/copy-to-storage.sh
