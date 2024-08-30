@@ -147,10 +147,15 @@ do
 done
 ```
 
-This allows us to access the remote host using this SSH command:
+Next, check the key fingerprint for each host. You need to enter `yes` for each prompt to confirm that the host key fingerprint is correct.
+This only needs to be done once when the connection is first configured.
 
 ```bash
-ssh raspberry1
+for i in $raspberry_ids
+do
+  host="raspberry$i"
+  ssh $host -t "hostname"
+done
 ```
 
 # Usage
