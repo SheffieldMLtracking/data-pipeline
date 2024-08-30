@@ -147,7 +147,14 @@ do
 done
 ```
 
-Next, check the key fingerprint for each host. You need to enter `yes` for each prompt to confirm that the host key fingerprint is correct.
+We can now set up the [`known_hosts` file](https://www.ssh.com/academy/ssh/host-key#known-host-keys) which stores recognised remote machines.
+
+```bash
+ssh-keyscan -H iot.bugtrack.org.uk >> ~/.ssh/known_hosts
+```
+
+Next, check the key fingerprint for each Ohio host.
+You need to enter `yes` for each prompt to confirm that the host key fingerprint is correct.
 This only needs to be done once when the connection is first configured.
 
 ```bash
@@ -156,6 +163,12 @@ do
   host="raspberry$i"
   ssh $host -t "hostname"
 done
+```
+
+To test this out manually, try a passwordless connection to a single remote host:
+
+```bash
+ssh raspberry31
 ```
 
 # Usage
