@@ -162,7 +162,7 @@ for i in $raspberry_ids
 do
   host="raspberry$i"
   echo $host
-  ssh $host -t "whoami"
+  ssh $host -t "ip addr show | grep link/ether"
 done
 ```
 
