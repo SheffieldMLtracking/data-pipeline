@@ -2,11 +2,14 @@
 
 This repository contains scripts to implement the automatic transfer of data from the Raspberry Pi machines deployed in Ohio to the University of Sheffield infrastructure. It runs a task on a regular schedule that copies data from the machines and deletes old files using a secure shell (SSH) connection.
 
+This service is designed to run regularly and iterate through the RPIs one at a time, sync all the data, delete any files older than *x* days, then wait 10 minutes and start again. It will only delete files after a successful sync, to avoid accidentally deleting data that hasn't been transferred first.
+
 See [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
 
 The repository contains the following directories:
 
 - `scripts/systemd`  contains the [systemd units](https://systemd.io/) that define this system.
+- `scripts/copy-to-storage.sh` is a shell script that iterates over the target machines and runs the data transfer and file deletion operations.
 
 # Installation
 
