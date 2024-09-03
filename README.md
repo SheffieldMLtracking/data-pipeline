@@ -1,6 +1,6 @@
 # Ohio bee tracker data pipeline
 
-This repository contains scripts to implement the automatic transfer of data from the Raspberry Pi machines deployed in Ohio to the University of Sheffield infrastructure.
+This repository contains scripts to implement the automatic transfer of data from the Raspberry Pi machines deployed in Ohio to the University of Sheffield infrastructure. It runs a task on a regular schedule that copies data from the machines and deletes old files using a secure shell (SSH) connection.
 
 See [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
 
@@ -161,7 +161,8 @@ This only needs to be done once when the connection is first configured.
 for i in $raspberry_ids
 do
   host="raspberry$i"
-  ssh $host -t "hostname"
+  echo $host
+  ssh $host -t "whoami"
 done
 ```
 
@@ -175,16 +176,22 @@ ssh raspberry31
 
 The services defined in this repository are `systemd` units that are controlled using [`systemctl`](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html).
 
-Start the service.
+View the service status
 
 ```bash
-sudo systemctl start copy-to-storage
+sudo systemctl status copy-to-storage.timer
 ```
 
-Stop the service.
+Start the timer
 
 ```bash
-sudo systemctl stop copy-to-storage
+sudo systemctl start copy-to-storage.timer
+```
+
+Stop the timer
+
+```bash
+sudo systemctl stop copy-to-storage.timer
 ```
 
 To view the `systemd` logs using [journalctl](https://manpages.ubuntu.com/manpages/xenial/en/man1/journalctl.1.html):
