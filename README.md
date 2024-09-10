@@ -202,6 +202,11 @@ sudo systemctl stop copy-to-storage.timer
 To view the `systemd` logs using [journalctl](https://manpages.ubuntu.com/manpages/xenial/en/man1/journalctl.1.html):
 
 ```bash
-journalctl -u copy-to-storage.service --lines=100
+sudo journalctl -u copy-to-storage.service --lines=100
 ```
 
+You can watch it run live by using the follow option:
+
+```bash
+sudo journalctl -u copy-to-storage.service --follow
+```
