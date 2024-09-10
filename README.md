@@ -49,6 +49,8 @@ Activate the service.
 sudo systemctl enable copy-to-storage
 ```
 
+To activate the server, please read the [usage instructions](#usage) below.
+
 ## SSH configuration
 
 This SSH configuration is used by the `rsync` command in this service to establish a connection to the Raspberry Pis and transfer data into the TUOS campus network. This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two) that uses a third machine as an intermediate.
