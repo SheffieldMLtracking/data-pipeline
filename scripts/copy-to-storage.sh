@@ -28,5 +28,5 @@ do
   # For the find command, we can test it by removing the -delete option.
   # find docs: https://manpages.ubuntu.com/manpages/xenial/man1/find.1.html
   /usr/bin/rsync --archive --compress --update --verbose $remote_host:$remote_directory $local_directory && \
-  /usr/bin/ssh $remote_host -t "find \"$remote_directory\" -mindepth 1 -mtime +$delete_older_than_days -type f -name \"$name\" -delete"
+  /usr/bin/ssh $remote_host -tt "find \"$remote_directory\" -mindepth 1 -mtime +$delete_older_than_days -type f -name \"$name\" -delete"
 done
