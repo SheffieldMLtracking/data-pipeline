@@ -15,7 +15,7 @@ raspberry_ids="$(seq $min_rpi_number $max_rpi_number)"
 
 # Iterate over all boxes
 # (It'll skip over any machines that it can't connect to because they don't exist or are offline.)
-for i in 
+for i in $raspberry_ids
 do
   # Specify the SSH configuration profile
   remote_host="raspberry$i"
