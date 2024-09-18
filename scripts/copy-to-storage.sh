@@ -12,6 +12,10 @@ name="*.np"
 min_rpi_number=1
 max_rpi_number=99
 raspberry_ids="$(seq $min_rpi_number $max_rpi_number)"
+# Check disk usage on remote file system
+file_system="/"
+# Delete data above this percentage disk usage
+threshold=50
 
 # Iterate over all boxes
 # (It'll skip over any machines that it can't connect to because they don't exist or are offline.)
@@ -22,11 +26,22 @@ do
   echo "$remote_host"
 
   # Run the data sync, and, *if successful*, also delete old files.
+  # We delete files more "aggressively" if the storage space is full.
   # We can test this command using the --dry-run option.
   # rsync docs: https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
   # The && operator means the sync must conclude before deletion happens.
   # For the find command, we can test it by removing the -delete option.
   # find docs: https://manpages.ubuntu.com/manpages/xenial/man1/find.1.html
   /usr/bin/rsync --archive --compress --update --verbose $remote_host:$remote_directory $local_directory && \
-  /usr/bin/ssh $remote_host -t "find \"$remote_directory\" -mindepth 1 -mtime +$delete_older_than_days -type f -name \"$name\" -delete"
+  /usr/bin/ssh $remote_host "bash -s" << EOF
+# If the disk usage is above the threshold
+if [ $(df $file_system --output='pcent' | grep --only-matching "[0-9]*") -gt $threshold ]
+then
+  # Delete files older than x minutes
+  find \"$remote_directory\" -mindepth 1 -mtime +$delete_older_than_days -type f -name \"$name\" -delete
+else
+  # Delete files older than x days
+  find \"$remote_directory\" -mindepth 1 -mtime +$delete_older_than_days -type f -name \"$name\" -delete
+fi
+EOF
 done
