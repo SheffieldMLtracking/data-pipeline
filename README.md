@@ -2,18 +2,53 @@
 
 This repository contains scripts to implement the automatic transfer of data from the Raspberry Pi machines deployed in Ohio to the University of Sheffield infrastructure. It runs a task on a regular schedule that copies data from the machines and deletes old files using a secure shell (SSH) connection.
 
-This service is designed to run regularly and iterate through the RPIs one at a time, sync all the data, delete any files older than *x* days, then wait 10 minutes and start again. It will only delete files after a successful sync, to avoid accidentally deleting data that hasn't been transferred first.
-
 See [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
+
+A diagram of the flow of research data between the various machines (boxes) is shown below. The shaded areas represent different physical locations and networks.
+
+```mermaid
+---
+title: Data flow
+---
+flowchart LR
+subgraph Ohio
+    raspberry1
+    raspberry2
+    raspberry3
+end
+
+raspberry1 --> ohiobeeproject
+raspberry2 --> ohiobeeproject
+raspberry3 --> ohiobeeproject
+
+subgraph Sheffield
+    ohiobeeproject --> storage[("Storage")]
+end
+```
+
+
+
+# Overview
+
+This service is designed to run regularly and iterate through the RPIs one at a time, copy the research data, and prevent the storage on the remote devices from filling up. Upon connecting to each remote machine, the process works as follows:
+
+1. Sync all the data files to a specified directory;
+2. Check disk usage, if there isn't much space left then delete files older than *x* minutes;
+3. Delete any files older than *x* days;
+4. Wait *n* minutes and start again.
+
+It will only delete files *only* after a successful sync, to avoid accidentally deleting data that hasn't been transferred first. This is designed to prevent accidental data loss, given the limited storage space on the remote machines.
 
 The repository contains the following directories:
 
 - `scripts/systemd`  contains the [systemd units](https://systemd.io/) that define this system.
 - `scripts/copy-to-storage.sh` is a shell script that iterates over the target machines and runs the data transfer and file deletion operations.
 
+The timer (`copy-to-storage.timer`) will run on a regular schedule and initiate the service (`copy-to-storage.service`) which runs a shell script that performs the data operations.
+
 # Installation
 
-Please follow the following steps to set up the machine.
+Please follow the following steps to set up the machine. Also, see [`install.sh`](./install.sh).
 
 ## systemd service
 
@@ -187,10 +222,38 @@ ssh raspberry31
 
 The services defined in this repository are `systemd` units that are controlled using [`systemctl`](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html).
 
+## Configuration
+
+TODO
+
+## Monitoring
+
 View the service status
 
 ```bash
 sudo systemctl status copy-to-storage.timer
+```
+
+To view the `systemd` logs using [journalctl](https://manpages.ubuntu.com/manpages/xenial/en/man1/journalctl.1.html):
+
+```bash
+sudo journalctl -u copy-to-storage.service --lines=100
+```
+
+You can watch it run live by using the follow option:
+
+```bash
+sudo journalctl -u copy-to-storage.service --follow
+```
+
+## Service control
+
+The timer (`copy-to-storage.timer`) will run on a regular schedule and initiate the service (`copy-to-storage.service`).
+
+Ensure the service is activated
+
+```bash
+sudo systemctl enable copy-to-storage.timer
 ```
 
 Start the timer
@@ -205,14 +268,3 @@ Stop the timer
 sudo systemctl stop copy-to-storage.timer
 ```
 
-To view the `systemd` logs using [journalctl](https://manpages.ubuntu.com/manpages/xenial/en/man1/journalctl.1.html):
-
-```bash
-sudo journalctl -u copy-to-storage.service --lines=100
-```
-
-You can watch it run live by using the follow option:
-
-```bash
-sudo journalctl -u copy-to-storage.service --follow
-```
