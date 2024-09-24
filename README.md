@@ -71,7 +71,7 @@ sudo cp --verbose ./scripts/systemd/*.service /etc/systemd/system/
 sudo cp --verbose ./scripts/systemd/*.timer /etc/systemd/system/
 ```
 
-Reload the systemd units using [`systemdctl`](https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html)
+Reload the systemd units using [`systemctl`](https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html)
 
 ```bash
 sudo systemctl daemon-reload
