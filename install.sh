@@ -11,4 +11,4 @@ apt install --yes -qqq rsync
 cp --verbose ./scripts/systemd/*.service /etc/systemd/system/
 cp --verbose ./scripts/systemd/*.timer /etc/systemd/system/
 mkdir --parents /opt/data-pipeline
-cp ./scripts/copy-to-storage.sh /opt/data-pipeline/copy-to-storage.sh
+cp --verbose ./scripts/copy-to-storage.sh /opt/data-pipeline/copy-to-storage.sh
