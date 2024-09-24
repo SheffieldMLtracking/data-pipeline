@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Run the data sync, and, *if successful*, also delete old files.
+# We delete files more "aggressively" if the storage space is full.
+# If the available disk space is low, then delete more recent files, up to
+# "x" minutes old. If there's plenty of disk space, then we can delete up to "y" days old.
+# We can test this command using the --dry-run option.
+
 # Options
 # The directory on the remote machine
 remote_directory="/home/pi/beephotos"
@@ -27,16 +33,8 @@ do
   remote_host="raspberry$i"
   echo "$remote_host"
 
-  # Run the data sync, and, *if successful*, also delete old files.
-  # We delete files more "aggressively" if the storage space is full.
-  # If the available disk space is low, then delete more recent files, up to
-  # "x" minutes old. If there's plenty of disk space, then we can delete up to "y" days old.
-  # We can test this command using the --dry-run option.
   # rsync docs: https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
   # The && operator means the sync must conclude before deletion happens.
-  # For the find command, we can test it by removing the -delete option.
-  # find docs: https://manpages.ubuntu.com/manpages/xenial/man1/find.1.html
-  # -mtime +n means greater than (-n means less than)
   # Here documents, see https://tldp.org/LDP/abs/html/here-docs.html
   # EOF usage, see https://github.com/koalaman/shellcheck/wiki/SC2087
   /usr/bin/rsync --archive --compress --update --verbose "$remote_host":"$remote_directory" "$local_directory" && \
@@ -45,6 +43,9 @@ do
 if [ $(df $file_system --output='pcent' | grep --only-matching "[0-9]*") -gt $threshold ]
 then
   # Delete files older than x minutes
+  # For the find command, we can test it by removing the -delete option.
+  # find docs: https://manpages.ubuntu.com/manpages/xenial/man1/find.1.html
+  # -mtime +n means greater than (-n means less than)
   find \"$remote_directory\" -mindepth 1 -mmin +$delete_older_than_minutes -type f -name \"$name\" -delete
 else
   # Delete files older than x days
