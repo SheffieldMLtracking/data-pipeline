@@ -42,7 +42,7 @@ name="*.np"
 
 percentage=$(df $file_system --output='pcent' | grep --only-matching "[0-9]*")
 # If the disk usage is above the threshold
-if [["$percentage"  -gt "$threshold" ]]; then
+if [[ "$percentage"  -gt "$threshold" ]]; then
   echo "Available disk space low, deleting files older than $delete_older_than_minutes minutes"
   # Delete files older than x minutes
   # For the find command, we can test it by removing the -delete option.

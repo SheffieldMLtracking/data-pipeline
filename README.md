@@ -33,7 +33,7 @@ end
 This service is designed to run regularly and iterate through the RPIs one at a time, copy the research data, and prevent the storage on the remote devices from filling up. Upon connecting to each remote machine, the process works as follows:
 
 1. Sync all the data files to a specified directory;
-2. Check disk usage, if there isn't much space left then delete files older than *x* minutes;
+2. Check disk usage, if there isn't much space left then delete files older than *x* minutes;
 3. Delete any files older than *x* days;
 4. Wait *n* minutes and start again.
 
