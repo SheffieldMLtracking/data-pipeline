@@ -1,4 +1,4 @@
-!#/bin/bash
+#!/bin/bash
 
 # Check storage on remote machines
 
@@ -9,8 +9,8 @@ raspberry_ids=$(seq 30 35)
 for i in $raspberry_ids
 do
   host="raspberry$i"
-  echo $host
+  echo "$host"
   
   # Display disk usage
-  ssh $host -t "du /home/pi/beephotos -h --summarize && df -hT | grep ext4"
+  ssh "$host" -t "du /home/pi/beephotos -h --summarize && df -hT | grep ext4"
 done
