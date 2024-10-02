@@ -39,6 +39,7 @@ delete_older_than_minutes=30
 # Delete files older than n days
 delete_older_than_days=7
 name="*.np"
+remote_directory="/home/pi/beephotos"
 
 percentage=$(df $file_system --output='pcent' | grep --only-matching "[0-9]*")
 # If the disk usage is above the threshold
