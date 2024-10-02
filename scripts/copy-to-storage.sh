@@ -49,11 +49,11 @@ if [[ "$percentage"  -gt "$threshold" ]]; then
   # For the find command, we can test it by removing the -delete option.
   # find docs: https://manpages.ubuntu.com/manpages/xenial/man1/find.1.html
   # -mtime +n means greater than (-n means less than)
-  find $remote_directory -mindepth 1 -mmin +$delete_older_than_minutes -type f -name \"$name\" -delete
+  find "$remote_directory" -mindepth 1 -mmin +$delete_older_than_minutes -type f -name "$name" -delete
 else
   # Delete files older than x days
   echo "Deleting files older than $delete_older_than_days days"
-  find $remote_directory -mindepth 1 -mtime +$delete_older_than_days -type f -name \"$name\" -delete
+  find "$remote_directory" -mindepth 1 -mtime +$delete_older_than_days -type f -name "$name" -delete
 fi
 EOF
 done
