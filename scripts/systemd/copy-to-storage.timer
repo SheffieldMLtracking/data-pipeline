@@ -11,7 +11,7 @@ Unit=copy-to-storage.service
 # Start on boot
 OnBootSec=1min
 # Wait x minutes (monotonic timer) between runs
-OnUnitActiveSec=10min
+OnUnitActiveSec=1min
 
 [Install]
 # Start automatically on system reboot
