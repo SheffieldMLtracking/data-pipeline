@@ -12,5 +12,5 @@ do
   echo "$host"
   
   # Display disk usage
-  ssh "$host" -t "du /home/pi/beephotos -h --summarize && df -hT | grep ext4"
+  ssh "$host" -t "du /home/pi/beephotos --human-readable --summarize && df -hT /"
 done
