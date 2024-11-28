@@ -11,7 +11,7 @@ An overview diagram of the flow of research data between the various machines (b
 title: Data flow
 ---
 flowchart LR
-subgraph "University of Ohio"
+subgraph "Ohio University"
     raspberry1
     raspberry2
     raspberry3
@@ -63,13 +63,13 @@ First, install dependencies
 sudo apt install rsync
 ```
 
-Create the necessary service user accounts.
+Create the necessary service user accounts with write permissions to the research storage area. The service uses its own system user account that is defined in `scripts/copy-to-storage.service` in the `[Service]` [User=](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#User=) option.
 
 Set up the SSH keys (see the SSH configuration section below).
 
-Clone this repository.
+[Clone](https://git-scm.com/docs/git-clone) this repository.
 
-Install systemd units.
+Install [systemd units](https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files).
 
 ```bash
 sudo cp --verbose ./systemd/*.service /etc/systemd/system/
@@ -89,39 +89,63 @@ sudo mkdir /opt/data-pipeline
 sudo cp ./scripts/copy-to-storage.sh /opt/data-pipeline/copy-to-storage.sh
 ```
 
-Activate the service.
+Enable the service. (This will *not* activate the service.)
 
 ```bash
 sudo systemctl enable copy-to-storage
 ```
 
-To activate the server, please read the [usage instructions](#usage) below.
+To activate the service, please read the [usage instructions](#usage) below.
 
 ## SSH configuration
 
-This SSH configuration is used by the `rsync` command in this service to establish a connection to the Raspberry Pis and transfer data into the TUOS campus network. This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two) that uses a third machine as an intermediate.
+The service uses a specific SSH configuration to enable the `rsync` command to establish a connection to the Raspberry Pis (RPIs) and transfer data into the University of Sheffield (UoS) campus network. This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two), where this third machine is an intermediate.
 
-The diagram below shows the different machines involved and how the SSH connections are set up. Each arrow represents an SSH connection, where the double-headed arrows indicate a reverse tunnel, where a local port on one machine is bound to a persistent SSH connection on the other machine. This means we can connect directly from the University of Sheffield (TUOS) campus network onto the Ohio campus network using the AWS virtual machine as an intermediate jump host.
+### Reverse tunnels
+
+The diagram below shows the different machines involved and how the SSH connections are set up. For more information, see [issue #16](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/16). Each arrow represents an SSH connection, where the thick arrows indicate [remote port forwarding](https://help.ubuntu.com/community/SSH/OpenSSH/PortForwarding#Remote_Port_Forwarding) to establish a reverse tunnel, where a local port on one machine is bound to a persistent SSH connection on the other machine.
 
 ```mermaid
 ---
-title: SSH tunnels
+title: SSH remote port forwarding
 ---
 flowchart TD
 subgraph AWS
 awsbox[iot.bugtrack.org.uk]
 end
-subgraph TUOS
+subgraph University of Sheffield
 ohiobeeproject --> awsbox
 end
-subgraph Ohio
-raspberry1 <---> awsbox
-raspberry2 <---> awsbox
-raspberry3 <---> awsbox
+subgraph Ohio University
+raspberry1 == "Forwarding" ==> awsbox
+raspberry2 == "Forwarding" ==> awsbox
+raspberry3 == "Forwarding" ==> awsbox
 end
 ```
 
-To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the TUOS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
+This means we can connect directly from the University of Sheffield (UoS) campus network onto the Ohio campus network using the Amazon Web Services (AWS) virtual machine as an intermediate jump host.
+
+```mermaid
+---
+title: Secure shell connections
+---
+flowchart TD
+subgraph University of Sheffield
+	ohiobeeproject
+end
+subgraph AWS
+	awsbox[iot.bugtrack.org.uk]
+end
+subgraph Ohio University
+	raspberry1
+end
+ohiobeeproject --> awsbox
+awsbox --> raspberry1
+```
+
+
+
+Each machine must be able to connect to its desired target automatically, without human intervention. To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the UoS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
 
 The following settings assume we're acting as the service account:
 
