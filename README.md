@@ -129,18 +129,15 @@ This means we can connect directly from the University of Sheffield (UoS) campus
 ---
 title: Secure shell connections
 ---
-flowchart TD
-subgraph University of Sheffield
-	ohiobeeproject
-end
-subgraph AWS
-	awsbox[iot.bugtrack.org.uk]
-end
-subgraph Ohio University
-	raspberry1
-end
-ohiobeeproject --> awsbox
-awsbox --> raspberry1
+sequenceDiagram
+
+participant ohiobeeproject
+participant iot.bugtrack.org.uk
+participant raspberry1
+
+ohiobeeproject->>iot.bugtrack.org.uk: SSH Proxy Jump
+iot.bugtrack.org.uk->>raspberry1: SSH Connection
+ohiobeeproject-->>raspberry1: SSH Connection
 ```
 
 Each machine must be able to connect to its desired target automatically, without human intervention. To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the UoS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
