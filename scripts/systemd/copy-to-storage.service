@@ -21,6 +21,9 @@ Group=ohiobeeprojectsvc
 # https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
 ExecStart=/bin/bash /opt/data-pipeline/copy-to-storage.sh
 Restart=no
+# Disable resource control delegation (this is a very simple service)
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html#Delegate=
+Delegate=no
 
 [Install]
 # Run on boot
