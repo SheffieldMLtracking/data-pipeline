@@ -143,8 +143,6 @@ ohiobeeproject --> awsbox
 awsbox --> raspberry1
 ```
 
-
-
 Each machine must be able to connect to its desired target automatically, without human intervention. To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the UoS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
 
 The following settings assume we're acting as the service account:
@@ -159,7 +157,9 @@ For the data transfer service machine (`ohiobeeproject`) to connect to the jump 
 
 ```bash
 user="data-pipeline-svc"
+# Create an SSH key (this will create private and public keys)
 ssh-keygen -f ~/.ssh/bugtrack -N "" -t ecdsa
+# Copy to the jump host
 scp ~/.ssh/bugtrack.pub $user@iot.bugtrack.org.uk:~/.ssh/authorized_keys
 ```
 
@@ -199,7 +199,7 @@ do
 done
 ```
 
-This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for each target remote host:
+This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for the jump host and entries for each target remote host:
 
 ```
 # AWS EC2 instance
