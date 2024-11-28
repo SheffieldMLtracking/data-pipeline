@@ -15,5 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: pip install systemdlint==1.*
-      - run: systemdlint ./scripts/systemd/*
+      - name: Install systemdlint
+        run: pip install systemdlint==1.*
+      - name: Lint systemd units
+        run: systemdlint ./scripts/systemd/*
