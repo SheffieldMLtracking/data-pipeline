@@ -1,0 +1,20 @@
+# GitHub Actions workflow
+# https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions
+name: Lint Bash scripts
+
+# Controls when the workflow will run
+on:
+  pull_request:
+    branches: [ "main" ]
+  # Run manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint shell scripts
+        uses: azohra/shell-linter@v0.6.0
+        with:
+          path: "scripts"
