@@ -8,9 +8,10 @@ set -e
 apt install --yes -qqq rsync
 
 # Install services
-cp --verbose ./scripts/systemd/*.service /etc/systemd/system/
-cp --verbose ./scripts/systemd/*.timer /etc/systemd/system/
-# Reload the systemd manager configuration. See: https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html
+cp --verbose ./systemd/*.service /etc/systemd/system/
+cp --verbose ./systemd/*.timer /etc/systemd/system/
+# Reload the systemd manager configuration.
+# See: https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html
 systemctl daemon-reload
 
 # Install scripts

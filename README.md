@@ -1,17 +1,17 @@
 # Ohio bee tracker data pipeline
 
-This repository contains scripts to implement the automatic transfer of data from the Raspberry Pi machines deployed in Ohio to the University of Sheffield infrastructure. It runs a task on a regular schedule that copies data from the machines and deletes old files using a secure shell (SSH) connection.
+This repository defines a service that performs automatic transfer of data from the Raspberry Pi (RPI) machines deployed at the University of Ohio to the research infrastructure at the University of Sheffield. It runs a task on a regular schedule that copies data from the remote machines and deletes old files via a secure shell (SSH) connection.
 
-See [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
+See also: [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
 
-A diagram of the flow of research data between the various machines (boxes) is shown below. The shaded areas represent different physical locations and networks.
+An overview diagram of the flow of research data between the various machines (boxes) is shown below. The shaded areas represent different physical locations and networks. The arrows represent the direction in which data are moved.
 
 ```mermaid
 ---
 title: Data flow
 ---
 flowchart LR
-subgraph Ohio
+subgraph "Ohio University"
     raspberry1
     raspberry2
     raspberry3
@@ -21,36 +21,41 @@ raspberry1 --> ohiobeeproject
 raspberry2 --> ohiobeeproject
 raspberry3 --> ohiobeeproject
 
-subgraph Sheffield
+subgraph "University of Sheffield"
     ohiobeeproject --> storage[("Storage")]
 end
 ```
 
-
-
 # Overview
 
-This service is designed to run regularly and iterate through the RPIs one at a time, copy the research data, and prevent the storage on the remote devices from filling up. Upon connecting to each remote machine, the process works as follows:
+This service runs regularly and iterates through the RPIs one at a time, copy the research data, and prevent the storage on the remote devices from filling up. For each remote machine, the process works as follows:
 
-1. Sync all the data files to a specified directory;
-2. Check disk usage, if there isn't much space left then delete files older than *x* minutes;
-3. Delete any files older than *x* days;
-4. Wait *n* minutes and start again.
+1. Connect to a remote machine via secure shell;
+2. Sync all the data files to a specified directory;
+3. Upon successful transfer, delete each data file from the remote machine.
 
-It will only delete files *only* after a successful sync, to avoid accidentally deleting data that hasn't been transferred first. This is designed to prevent accidental data loss, given the limited storage space on the remote machines.
+## Remote sync
 
-The repository contains the following directories:
+The data transfer is implemented using the remote synchronizing (`rsync`) tool which compresses files during transit and removes the files from the remote machine using [the `--delete` option](https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html). If a file is modified during transfer, `rsync` will fail and that file will be transferred during the subsequent run.
 
-- `scripts/systemd`  contains the [systemd units](https://systemd.io/) that define this system.
-- `scripts/copy-to-storage.sh` is a shell script that iterates over the target machines and runs the data transfer and file deletion operations.
+It will only delete files *only* after a successful sync, to avoid accidentally deleting data that hasn't been transferred first. This is designed to prevent accidental data loss and preserve the limited storage space on the remote machines.
 
-The timer (`copy-to-storage.timer`) will run on a regular schedule and initiate the service (`copy-to-storage.service`) which runs a shell script that performs the data operations.
+## Repository contents
+
+The repository contains the following directories and files:
+
+- `./systemd`  contains the [systemd units](https://systemd.io/) that define the service using the Ubuntu service management system.
+  - The timer (`copy-to-storage.timer`) will run on a regular schedule and initiate the service (`copy-to-storage.service`) which runs a shell script that performs the data operations.
+
+- `./scripts/copy-to-storage.sh` is a Bash shell script that iterates over the target machines and runs the data transfer and file deletion operations.
+
+There are also some useful Unix shell scripts for inspecting the remote machines.
 
 # Installation
 
-Please follow the following steps to set up the machine. Also, see [`install.sh`](./install.sh).
+Please follow the following steps to set up the machine. Also, see [`install.sh`](./install.sh). These steps assume that a recent Linux (Ubuntu) operating system is used.
 
-## systemd service
+## Install the systemd service
 
 First, install dependencies
 
@@ -58,17 +63,17 @@ First, install dependencies
 sudo apt install rsync
 ```
 
-Create the necessary service user accounts.
+Create the necessary service user accounts with write permissions to the research storage area. The service uses its own system user account that is defined in `scripts/copy-to-storage.service` in the `[Service]` [User=](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#User=) option.
 
 Set up the SSH keys (see the SSH configuration section below).
 
-Clone this repository.
+[Clone](https://git-scm.com/docs/git-clone) this repository.
 
-Install systemd units.
+Install [systemd units](https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files).
 
 ```bash
-sudo cp --verbose ./scripts/systemd/*.service /etc/systemd/system/
-sudo cp --verbose ./scripts/systemd/*.timer /etc/systemd/system/
+sudo cp --verbose ./systemd/*.service /etc/systemd/system/
+sudo cp --verbose ./systemd/*.timer /etc/systemd/system/
 ```
 
 Reload the systemd units using [`systemctl`](https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html)
@@ -84,39 +89,61 @@ sudo mkdir /opt/data-pipeline
 sudo cp ./scripts/copy-to-storage.sh /opt/data-pipeline/copy-to-storage.sh
 ```
 
-Activate the service.
+Enable the service. (This will *not* activate the service.)
 
 ```bash
 sudo systemctl enable copy-to-storage
 ```
 
-To activate the server, please read the [usage instructions](#usage) below.
+To activate the service, please read the [usage instructions](#usage) below.
 
 ## SSH configuration
 
-This SSH configuration is used by the `rsync` command in this service to establish a connection to the Raspberry Pis and transfer data into the TUOS campus network. This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two) that uses a third machine as an intermediate.
+The service uses a specific SSH configuration to enable the `rsync` command to establish a connection to the Raspberry Pis (RPIs) and transfer data into the University of Sheffield (UoS) campus network. This system connects to the target machines using the cloud machine as a ["jump" host](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Jump_Hosts_--_Passing_Through_a_Gateway_or_Two), where this third machine is an intermediate.
 
-The diagram below shows the different machines involved and how the SSH connections are set up. Each arrow represents an SSH connection, where the double-headed arrows indicate a reverse tunnel, where a local port on one machine is bound to a persistent SSH connection on the other machine. This means we can connect directly from the University of Sheffield (TUOS) campus network onto the Ohio campus network using the AWS virtual machine as an intermediate jump host.
+### Reverse tunnels
+
+The diagram below shows the different machines involved and how the SSH connections are set up. For more information, see [issue #16](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/16). Each arrow represents an SSH connection, where the thick arrows indicate [remote port forwarding](https://help.ubuntu.com/community/SSH/OpenSSH/PortForwarding#Remote_Port_Forwarding) to establish a reverse tunnel, where a local port on one machine is bound to a persistent SSH connection on the other machine.
 
 ```mermaid
 ---
-title: SSH tunnels
+title: SSH remote port forwarding
 ---
 flowchart TD
 subgraph AWS
 awsbox[iot.bugtrack.org.uk]
 end
-subgraph TUOS
+subgraph University of Sheffield
 ohiobeeproject --> awsbox
 end
-subgraph Ohio
-raspberry1 <---> awsbox
-raspberry2 <---> awsbox
-raspberry3 <---> awsbox
+subgraph Ohio University
+raspberry1 == "Forwarding" ==> awsbox
+raspberry2 == "Forwarding" ==> awsbox
+raspberry3 == "Forwarding" ==> awsbox
 end
 ```
 
-To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the TUOS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
+This means we can connect directly from the University of Sheffield (UoS) campus network onto the Ohio campus network using the Amazon Web Services (AWS) virtual machine as an intermediate jump host.
+
+```mermaid
+---
+title: Secure shell connections
+---
+flowchart TD
+subgraph University of Sheffield
+	ohiobeeproject
+end
+subgraph AWS
+	awsbox[iot.bugtrack.org.uk]
+end
+subgraph Ohio University
+	raspberry1
+end
+ohiobeeproject --> awsbox
+awsbox --> raspberry1
+```
+
+Each machine must be able to connect to its desired target automatically, without human intervention. To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the UoS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
 
 The following settings assume we're acting as the service account:
 
@@ -130,7 +157,9 @@ For the data transfer service machine (`ohiobeeproject`) to connect to the jump 
 
 ```bash
 user="data-pipeline-svc"
+# Create an SSH key (this will create private and public keys)
 ssh-keygen -f ~/.ssh/bugtrack -N "" -t ecdsa
+# Copy to the jump host
 scp ~/.ssh/bugtrack.pub $user@iot.bugtrack.org.uk:~/.ssh/authorized_keys
 ```
 
@@ -170,7 +199,7 @@ do
 done
 ```
 
-This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for each target remote host:
+This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for the jump host and entries for each target remote host:
 
 ```
 # AWS EC2 instance
