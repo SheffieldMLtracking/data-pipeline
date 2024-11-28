@@ -1,6 +1,8 @@
 # Data sync service definition
 # https://systemd.io/
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
+# systemd service
+# https://fedoraproject.org/wiki/Packaging:Systemd
 [Unit]
 Description=Transfer data from the virtual machine to research storage
 Documentation=https://github.com/SheffieldMLtracking/data-pipeline
@@ -14,12 +16,12 @@ Wants=copy-to-storage.timer
 Type=simple
 # User account under which the service should run (optional)
 # If omitted, the service runs as the root user (caution advised)
-User=ohiobeeprojectsvc
+User=${USER}
 # Group account under which the service should run (optional)
-Group=ohiobeeprojectsvc
+Group=${GROUP}
 # Command to copy the file with rsync
 # https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
-ExecStart=/bin/bash /opt/data-pipeline/copy-to-storage.sh
+ExecStart=/bin/bash ${SCRIPT_PATH}
 Restart=no
 # Disable resource control delegation (this is a very simple service)
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html#Delegate=
