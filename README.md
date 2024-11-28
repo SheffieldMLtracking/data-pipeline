@@ -1,17 +1,17 @@
 # Ohio bee tracker data pipeline
 
-This repository contains scripts to implement the automatic transfer of data from the Raspberry Pi machines deployed in Ohio to the University of Sheffield infrastructure. It runs a task on a regular schedule that copies data from the machines and deletes old files using a secure shell (SSH) connection.
+This repository defines a service that performs automatic transfer of data from the Raspberry Pi (RPI) machines deployed at the University of Ohio to the research infrastructure at the University of Sheffield. It runs a task on a regular schedule that copies data from the remote machines and deletes old files via a secure shell (SSH) connection.
 
-See [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
+See also: [issue #20](https://github.com/SheffieldMLtracking/BBSRC_ohio/issues/20).
 
-A diagram of the flow of research data between the various machines (boxes) is shown below. The shaded areas represent different physical locations and networks.
+An overview diagram of the flow of research data between the various machines (boxes) is shown below. The shaded areas represent different physical locations and networks. The arrows represent the direction in which data are moved.
 
 ```mermaid
 ---
 title: Data flow
 ---
 flowchart LR
-subgraph Ohio
+subgraph "University of Ohio"
     raspberry1
     raspberry2
     raspberry3
@@ -21,36 +21,41 @@ raspberry1 --> ohiobeeproject
 raspberry2 --> ohiobeeproject
 raspberry3 --> ohiobeeproject
 
-subgraph Sheffield
+subgraph "University of Sheffield"
     ohiobeeproject --> storage[("Storage")]
 end
 ```
 
-
-
 # Overview
 
-This service is designed to run regularly and iterate through the RPIs one at a time, copy the research data, and prevent the storage on the remote devices from filling up. Upon connecting to each remote machine, the process works as follows:
+This service runs regularly and iterates through the RPIs one at a time, copy the research data, and prevent the storage on the remote devices from filling up. For each remote machine, the process works as follows:
 
-1. Sync all the data files to a specified directory;
-2. Check disk usage, if there isn't much space left then delete files older than *x* minutes;
-3. Delete any files older than *x* days;
-4. Wait *n* minutes and start again.
+1. Connect to a remote machine via secure shell;
+2. Sync all the data files to a specified directory;
+3. Upon successful transfer, delete each data file from the remote machine.
 
-It will only delete files *only* after a successful sync, to avoid accidentally deleting data that hasn't been transferred first. This is designed to prevent accidental data loss, given the limited storage space on the remote machines.
+## Remote sync
 
-The repository contains the following directories:
+The data transfer is implemented using the remote synchronizing (`rsync`) tool which compresses files during transit and removes the files from the remote machine using [the `--delete` option](https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html). If a file is modified during transfer, `rsync` will fail and that file will be transferred during the subsequent run.
 
-- `scripts/systemd`  contains the [systemd units](https://systemd.io/) that define this system.
-- `scripts/copy-to-storage.sh` is a shell script that iterates over the target machines and runs the data transfer and file deletion operations.
+It will only delete files *only* after a successful sync, to avoid accidentally deleting data that hasn't been transferred first. This is designed to prevent accidental data loss and preserve the limited storage space on the remote machines.
 
-The timer (`copy-to-storage.timer`) will run on a regular schedule and initiate the service (`copy-to-storage.service`) which runs a shell script that performs the data operations.
+## Repository contents
+
+The repository contains the following directories and files:
+
+- `./systemd`  contains the [systemd units](https://systemd.io/) that define the service using the Ubuntu service management system.
+  - The timer (`copy-to-storage.timer`) will run on a regular schedule and initiate the service (`copy-to-storage.service`) which runs a shell script that performs the data operations.
+
+- `./scripts/copy-to-storage.sh` is a Bash shell script that iterates over the target machines and runs the data transfer and file deletion operations.
+
+There are also some useful Unix shell scripts for inspecting the remote machines.
 
 # Installation
 
-Please follow the following steps to set up the machine. Also, see [`install.sh`](./install.sh).
+Please follow the following steps to set up the machine. Also, see [`install.sh`](./install.sh). These steps assume that a recent Linux (Ubuntu) operating system is used.
 
-## systemd service
+## Install the systemd service
 
 First, install dependencies
 
@@ -67,8 +72,8 @@ Clone this repository.
 Install systemd units.
 
 ```bash
-sudo cp --verbose ./scripts/systemd/*.service /etc/systemd/system/
-sudo cp --verbose ./scripts/systemd/*.timer /etc/systemd/system/
+sudo cp --verbose ./systemd/*.service /etc/systemd/system/
+sudo cp --verbose ./systemd/*.timer /etc/systemd/system/
 ```
 
 Reload the systemd units using [`systemctl`](https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html)
