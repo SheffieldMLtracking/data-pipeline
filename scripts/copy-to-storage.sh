@@ -26,5 +26,5 @@ do
   # rsync docs: https://manpages.ubuntu.com/manpages/focal/man1/rsync.1.html
   # The source files will be deleted from the remote host after they are transferred.
   # If a file is modified during transfer, rsync will fail. That file will be transferred during the subsequent run.
-  /usr/bin/rsync $rsync_options "$remote_host":"$remote_directory" "$local_directory"
+  /usr/bin/rsync "$rsync_options" "$remote_host":"$remote_directory" "$local_directory"
 done
