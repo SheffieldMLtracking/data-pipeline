@@ -10,7 +10,7 @@ local_directory="${LOCAL_DIRECTORY:-/mnt/san/shared/pml_group/Shared}"
 # Select target machines
 min_rpi_number="${MIN_RPI_NUMBER:-1}"
 max_rpi_number="${MAX_RPI_NUMBER:-99}"
-raspberry_ids="$(seq $min_rpi_number $max_rpi_number)"
+raspberry_ids="$(seq "$min_rpi_number" "$max_rpi_number")"
 host_prefix="${HOST_PREFIX:-raspberry}"
 rsync_options="${RSYNC_OPTIONS:---remove-source-files --archive --compress --update --verbose}"
 
