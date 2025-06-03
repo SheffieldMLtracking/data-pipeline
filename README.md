@@ -53,11 +53,11 @@ There are also some useful Unix shell scripts for inspecting the remote machines
 
 # Installation
 
-Please follow the following steps to set up the machine. Also, see [`install.sh`](./install.sh). These steps assume that a recent Linux (Ubuntu) operating system is used.
+Please follow the following steps to set up the data pipeline machine. These instructions only need to be followed once when the pipeline is first set up. To add new Raspberry Pis, please see the relevant section below. Also, see [`install.sh`](./install.sh). These steps assume that a recent Linux (Ubuntu) operating system is used.
 
 ## Install the systemd service
 
-First, install dependencies
+First, install dependencies:
 
 ```bash
 sudo apt install rsync
@@ -142,6 +142,12 @@ ohiobeeproject-->>raspberry1: SSH Connection
 
 Each machine must be able to connect to its desired target automatically, without human intervention. To make the remote hosts accept key-based authentication, we need to configure the [`authorized_keys` file](https://www.ssh.com/academy/ssh/authorized-keys-file) each target machine (the jump host *and* the Raspberry Pis). The configuration below should be set up on the UoS virtual machine. The public keys must be installed on the remote hosts located at AWS and Ohio to enable automatic key-based authentication.
 
+Connect to the data pipeline machine:
+
+```bash
+ssh <username>@ohiobeeproject.sheffield.ac.uk
+```
+
 The following settings assume we're acting as the service account:
 
 ```bash
@@ -150,7 +156,7 @@ sudo su - ohiobeeprojectsvc
 
 ## Jump host
 
-For the data transfer service machine (`ohiobeeproject`) to connect to the jump host, we need an SSH key. Create a key for the jump host and copy the public key to the target machine.
+For the data transfer service machine (`ohiobeeproject`) to connect to the jump host, we need an SSH key. This only needs to be done once, when the connections are first configured. On the `ohiobeeproject` machine, create a key for the jump host and copy the public key to the target machine.
 
 ```bash
 user="data-pipeline-svc"
@@ -162,6 +168,34 @@ scp ~/.ssh/bugtrack.pub $user@iot.bugtrack.org.uk:~/.ssh/authorized_keys
 
 ## Raspberry Pis
 
+To set up connections to new Raspberry Pi devices, please run the following steps on the `ohiobeeproject` machine to create and install private keys and public keys is the appropriate places. The diagram below gives an overview of which SSH keys and configuration files should exist at each location.
+
+```mermaid
+---
+title: SSH file locations
+---
+flowchart LR
+  subgraph ohiobeeproject
+    private_key1@{ shape: doc, label: "AWS Private key" }
+    public_key1@{ shape: doc, label: "AWS Public key" }
+    private_key2@{ shape: doc, label: "RPI nn private key" }
+    public_key2@{ shape: doc, label: "RPI nn public key" }
+    known_hosts@{ shape: doc }
+    ssh_config@{ shape: doc, label: "~/.ssh/config" }
+  end
+
+  subgraph bugtrack
+    authorized_keys1@{ shape: doc, label: "~/.ssh/authorized_keys" }
+  end
+
+  subgraph raspberrynn
+    authorized_keys2@{ shape: doc, label: "~/.ssh/authorized_keys" }
+  end
+
+  public_key1 -. "Copy" .-> authorized_keys1
+  public_key2 -. "Copy" .-> authorized_keys2
+```
+
 Specify the identifiers of the target machines, either a numerical range or specific numbers.
 
 ```bash
@@ -169,7 +203,7 @@ raspberry_ids="$(seq 1 50)"
 raspberry_ids="31 34 35"
 ```
 
-Generate SSH private and public keys for each target machine.
+On the `ohiobeeproject` machine, generate SSH private and public keys for each target machine.
 
 ```bash
 for i in $raspberry_ids
@@ -196,7 +230,7 @@ do
 done
 ```
 
-This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for the jump host and entries for each target remote host:
+The SSH configuration file should be saved on the `ohiobeeproject` virtual machine at the location `/home/ohiobeeprojectsvc/.ssh/config`. This file should look something like this, with an [entry](https://www.ssh.com/academy/ssh/config) for the jump host and entries for each target remote host:
 
 ```
 # AWS EC2 instance
@@ -215,7 +249,7 @@ host raspberry1
   proxyjump awsbox
 ```
 
-Install the public keys onto each Raspberry Pi (this step will require username-password authentication) to enable passwordless key-based authentication.
+Copy the specific public key from the `ohiobeeproject` VM to each Raspberry Pi (this step will require username-password authentication) to enable passwordless key-based authentication using the `authorized_keys` file.
 
 ```bash
 for i in $raspberry_ids
@@ -225,7 +259,7 @@ do
 done
 ```
 
-We can now set up the [`known_hosts` file](https://www.ssh.com/academy/ssh/host-key#known-host-keys) which stores recognised remote machines.
+We can now set up the [`known_hosts` file](https://www.ssh.com/academy/ssh/host-key#known-host-keys) on the `ohiobeeproject` VM, which stores recognised remote machines.
 
 ```bash
 ssh-keyscan -H iot.bugtrack.org.uk >> ~/.ssh/known_hosts
