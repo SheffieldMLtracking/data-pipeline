@@ -72,8 +72,7 @@ Set up the SSH keys (see the SSH configuration section below).
 Install [systemd units](https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files).
 
 ```bash
-sudo cp --verbose ./systemd/*.service /etc/systemd/system/
-sudo cp --verbose ./systemd/*.timer /etc/systemd/system/
+sudo cp --recursive --verbose ./systemd/* /etc/systemd/system/
 ```
 
 Reload the systemd units using [`systemctl`](https://manpages.ubuntu.com/manpages/xenial/en/man1/systemctl.1.html)
@@ -284,13 +283,23 @@ To test this out manually, try a passwordless connection to a single remote host
 ssh raspberry31
 ```
 
+# Configuration
+
+Each parameters of the pipeline may be adjusted, such as the path of the source and destination directories that store the research data.
+
+The options for the pipeline are contained in the file [`systemd/copy-to-storage.d/override.conf`](./systemd/copy-to-storage.d/override.conf) which [specifies the environment variables](https://www.flatcar.org/docs/latest/setup/systemd/environment-variables/) used in the systemd service.
+
+You can edit this file or edit it directly on the server using the [`systemctl edit` command](https://manpages.ubuntu.com/manpages/noble/man1/systemctl.1.html):
+
+```bash
+sudo systemctl edit copy-to-storage.service
+```
+
+The installation steps above will overwrite this configuration file.
+
 # Usage
 
 The services defined in this repository are `systemd` units that are controlled using [`systemctl`](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html).
-
-## Configuration
-
-TODO
 
 ## Monitoring
 
